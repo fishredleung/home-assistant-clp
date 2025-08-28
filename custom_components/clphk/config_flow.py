@@ -66,7 +66,7 @@ class CLPHKOptionsFlowHandler(config_entries.OptionsFlow):
                 _LOGGER.debug(f"[CFG] OTP verification returned token_data={token_data}")
                 user_input["access_token"] = token_data["access_token"]
                 user_input["refresh_token"] = token_data["refresh_token"]
-                user_input["access_token_expiry_time"] = token_data.get("expires_in")
+                user_input["access_token_expiry_time"] = token_data.get("access_token_expiry_time")
                 self.hass.config_entries.async_update_entry(
                     self.config_entry,
                     data={**self.config_entry.data, **user_input},
@@ -145,7 +145,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain="clphk"):
 
                 user_input["access_token"] = token_data["access_token"]
                 user_input["refresh_token"] = token_data["refresh_token"]
-                user_input["access_token_expiry_time"] = token_data.get("expires_in")
+                user_input["access_token_expiry_time"] = token_data.get("access_token_expiry_time")
                 return self.async_create_entry(title=user_input[CONF_NAME], data=user_input)
             except Exception as ex:
                 _LOGGER.exception(ex)

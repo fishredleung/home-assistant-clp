@@ -53,6 +53,11 @@
 
 ***Starting from 21st June 2025, sign-in with `username` and `password` no long works.***
 
+As of mid-2025 CLP have migrated their authentication endpoints. This integration now
+uses the updated OTP based API which exchanges the e‑mailed one time password for a
+pair of access and refresh tokens. Tokens are refreshed automatically when required
+and no additional configuration is needed.
+
 1. Visit CLP sign-in page [中文](https://www.clp.com.hk/services/zh/login) / [English](https://www.clp.com.hk/services/en/login)
 2. Choose to Sign-in with ***email***
 3. Enter your email address. Click `Continue`

@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def verify_otp(session, email, otp, timeout=30):
     """Verify OTP and return token data or raise exception."""
-    url = "https://api.clp.com.hk/ts1/ms/profile/accountManagement/passwordlesslogin/otpverify"
+    url = "https://api.clp.com.hk/ts2/ms/profile/accountManagement/passwordlesslogin/otpverify"
     json_payload = {
         "type": "email",
         "email": email,
@@ -28,7 +28,14 @@ async def verify_otp(session, email, otp, timeout=30):
                 if not data or 'data' not in data:
                     raise ValueError('Invalid response data')
                 _LOGGER.debug(f"OTP verification response: {data}")
-                return data['data']
+                resp = data["data"]
+                return {
+                    "access_token": resp.get("accessToken") or resp.get("access_token"),
+                    "refresh_token": resp.get("refreshToken") or resp.get("refresh_token"),
+                    "access_token_expiry_time": resp.get("accessTokenExpiredAt")
+                    or resp.get("access_token_expiry_time")
+                    or resp.get("expires_in"),
+                }
     except Exception as ex:
         _LOGGER.error(f"OTP verification failed: {ex}")
         raise
