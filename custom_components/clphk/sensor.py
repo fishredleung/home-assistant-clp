@@ -14,6 +14,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from dateutil import relativedelta
+from dateutil.parser import isoparse
 from homeassistant.components.lock import PLATFORM_SCHEMA
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -451,7 +452,7 @@ class CLPSensor(SensorEntity):
                 public_key = serialization.load_pem_public_key(CONF_CLP_PUBLIC_KEY.encode())
                 await self.api_request(
                     method="POST",
-                    url="https://api.clp.com.hk/ts1/ms/profile/register/eligibilityCheckAndLogin",
+                    url="https://api.clp.com.hk/ts2/ms/profile/register/eligibilityCheckAndLogin",
                     json={
                         "email": base64.b64encode(public_key.encrypt(
                             self._email.encode('utf-8'),
@@ -505,7 +506,9 @@ class CLPSensor(SensorEntity):
             elif self._refresh_token and self._access_token_expiry_time:
                 now_utc = datetime.datetime.now(datetime.timezone.utc)
                 try:
-                    expiry = datetime.datetime.strptime(self._access_token_expiry_time, '%Y-%m-%dT%H:%M:%S.%fZ').replace(tzinfo=datetime.timezone.utc)
+                    expiry = isoparse(self._access_token_expiry_time)
+                    if expiry.tzinfo is None:
+                        expiry = expiry.replace(tzinfo=datetime.timezone.utc)
                 except Exception as e:
                     _LOGGER.error(f"Failed to parse access_token_expiry_time: {self._access_token_expiry_time}, error: {e}")
                     expiry = None
@@ -515,19 +518,19 @@ class CLPSensor(SensorEntity):
 
                     response = await self.api_request(
                         method="POST",
-                        url="https://api.clp.com.hk/ts1/ms/profile/identity/manage/account/refresh_token",
+                        url="https://api.clp.com.hk/ts2/ms/profile/identity/manage/account/refresh_token",
                         json={
                             "refreshToken": self._refresh_token,
                         },
                     )
 
-                    _LOGGER.debug(f"access_token: {response['data']['access_token']}")
-                    _LOGGER.debug(f"refresh_token: {response['data']['refresh_token']}")
-                    _LOGGER.debug(f"access_token_expiry_time: {response['data']['expires_in']}")
+                    _LOGGER.debug(f"access_token: {response['data'].get('accessToken') or response['data'].get('access_token')}")
+                    _LOGGER.debug(f"refresh_token: {response['data'].get('refreshToken') or response['data'].get('refresh_token')}")
+                    _LOGGER.debug(f"access_token_expiry_time: {response['data'].get('accessTokenExpiredAt') or response['data'].get('expires_in')}")
 
-                    self._access_token = response['data']['access_token']
-                    self._refresh_token = response['data']['refresh_token']
-                    self._access_token_expiry_time = response['data']['expires_in']
+                    self._access_token = response['data'].get('accessToken') or response['data'].get('access_token')
+                    self._refresh_token = response['data'].get('refreshToken') or response['data'].get('refresh_token')
+                    self._access_token_expiry_time = response['data'].get('accessTokenExpiredAt') or response['data'].get('expires_in')
 
                     _LOGGER.debug(f"[SENSOR UPDATE] Persisting refreshed tokens to config entry.")
                     config_entries = self.hass.config_entries.async_entries(DOMAIN)
